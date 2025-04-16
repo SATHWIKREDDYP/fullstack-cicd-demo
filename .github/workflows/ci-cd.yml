@@ -100,10 +100,10 @@ jobs:
               BackendImageURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend:latest \
               FrontendRepositoryURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend \
               BackendRepositoryURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend \
-              VPCId=vpc-0ffe1ed38985de182 \
-              FrontendSubnetId=subnet-04ccebd195db80010 \
-              BackendSubnetId=subnet-04ccebd195db80010 \
-              SecurityGroupId=sg-0834e1746d798a82e \
+              VPCId=vpc-0ae142a936635dfc4 \
+              FrontendSubnetId=subnet-0545d557316da4be6 \
+              BackendSubnetId=subnet-0545d557316da4be6 \
+              SecurityGroupId=sg-0e5cdf890df48ea67 \
             --capabilities CAPABILITY_IAM
 
   # Job for updating ECS Services after new image push
