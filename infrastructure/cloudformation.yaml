@@ -43,6 +43,10 @@ Parameters:
     Type: String
     Description: The URI of the existing Backend ECR Repository.
 
+  ECSExecutionRoleArn:
+    Type: String
+    Description: The ARN of the existing ECS Execution Role.
+
 Resources:
 
   # Create ECS Cluster
@@ -50,29 +54,6 @@ Resources:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: !Ref ClusterName
-
-  # ECS Execution Role for Fargate
-  ECSExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: ecs-tasks.amazonaws.com
-      Policies:
-        - PolicyName: ECRPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - ecr:GetAuthorizationToken
-                  - ecr:BatchGetImage
-                  - ecr:BatchCheckLayerAvailability
-                Effect: Allow
-                Resource: "*"
 
   # Create ECS Task Definition for Frontend
   FrontendTaskDefinition:
@@ -84,7 +65,7 @@ Resources:
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn  # Reference the ECS execution role
+      ExecutionRoleArn: !Ref ECSExecutionRoleArn  # Reference the existing ECS execution role ARN
       ContainerDefinitions:
         - Name: frontend
           Image: !Ref FrontendImageURI  # Reference ECR frontend image URI
@@ -103,7 +84,7 @@ Resources:
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn  # Reference the ECS execution role
+      ExecutionRoleArn: !Ref ECSExecutionRoleArn  # Reference the existing ECS execution role ARN
       ContainerDefinitions:
         - Name: backend
           Image: !Ref BackendImageURI  # Reference ECR backend image URI
