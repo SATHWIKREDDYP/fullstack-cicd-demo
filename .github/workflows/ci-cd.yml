@@ -98,6 +98,8 @@ jobs:
             --parameter-overrides \
               FrontendImageURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend:latest \
               BackendImageURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend:latest \
+              FrontendRepositoryURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend \
+              BackendRepositoryURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend \
               VPCId=vpc-0ffe1ed38985de182 \
               FrontendSubnetId=subnet-04ccebd195db80010 \
               BackendSubnetId=subnet-04ccebd195db80010 \
