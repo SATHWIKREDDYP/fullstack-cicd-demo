@@ -43,6 +43,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
         with:
           region: us-east-1
+
       - name: Build and Push Backend Docker Image
         run: |
           cd backend
@@ -72,15 +73,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Update ECS Frontend service
+      - name: Update ECS Frontend Service
         run: |
-          # Updating ECS service with the new image tags
           ecs_service_name=frontend-service
-          cluster_name=fullstack-app
+          cluster_name=fullstack-app-cluster  # Updated to match the CloudFormation cluster name
           aws ecs update-service --cluster $cluster_name --service $ecs_service_name --force-new-deployment
+
       - name: Update ECS Backend Service
         run: |
-          #updating backend
           ecs_service_name=backend-service
-          cluster_name=fullstack-app
+          cluster_name=fullstack-app-cluster  # Updated to match the CloudFormation cluster name
           aws ecs update-service --cluster $cluster_name --service $ecs_service_name --force-new-deployment
+
