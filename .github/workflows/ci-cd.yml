@@ -87,7 +87,7 @@ jobs:
       - name: Deploy Infrastructure with CloudFormation
         run: |
           aws cloudformation deploy \
-            --template-file fullstack-cicd-demo/infrastructure/cloudformation.yaml \
+            --template-file ./infrastructure/cloudformation.yaml \
             --stack-name fullstack-app-stack \
             --parameter-overrides \
               FrontendImageURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend:latest \
