@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation template to create ECS Cluster, Task Definitions, and Services for Frontend and Backend
+Description: CloudFormation template to create ECS Cluster, Task Definitions, Services for Frontend and Backend, and ECR Repositories
 
 Parameters:
   ClusterName:
@@ -39,6 +39,18 @@ Resources:
     Properties:
       ClusterName: !Ref ClusterName
 
+  # Create ECR Repository for Frontend (No Lifecycle Policy)
+  FrontendRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: frontend
+
+  # Create ECR Repository for Backend (No Lifecycle Policy)
+  BackendRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: backend
+
   # Create ECS Task Definition for Frontend
   FrontendTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -51,7 +63,7 @@ Resources:
         - FARGATE
       ContainerDefinitions:
         - Name: frontend
-          Image: !Ref FrontendImageURI
+          Image: !Ref FrontendImageURI  # Reference ECR frontend image URI
           PortMappings:
             - ContainerPort: 80
               HostPort: 80
@@ -69,7 +81,7 @@ Resources:
         - FARGATE
       ContainerDefinitions:
         - Name: backend
-          Image: !Ref BackendImageURI
+          Image: !Ref BackendImageURI  # Reference ECR backend image URI
           PortMappings:
             - ContainerPort: 3001
               HostPort: 3001
@@ -121,3 +133,11 @@ Outputs:
   BackendServiceName:
     Description: The name of the Backend ECS Service.
     Value: !Ref BackendService
+
+  FrontendRepositoryURI:
+    Description: The URI of the Frontend ECR Repository.
+    Value: !GetAtt FrontendRepository.RepositoryUri
+
+  BackendRepositoryURI:
+    Description: The URI of the Backend ECR Repository.
+    Value: !GetAtt BackendRepository.RepositoryUri
