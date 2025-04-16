@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation template to create ECS Cluster, Task Definitions, Services for Frontend and Backend, and ECR Repositories
+Description: CloudFormation template to create ECS Cluster, Task Definitions, Services for Frontend and Backend, and use existing ECR Repositories
 
 Parameters:
   ClusterName:
@@ -35,6 +35,14 @@ Parameters:
     Default: sg-0834e1746d798a82e
     Description: The security group ID for the ECS service.
 
+  FrontendRepositoryURI:
+    Type: String
+    Description: The URI of the existing Frontend ECR Repository.
+
+  BackendRepositoryURI:
+    Type: String
+    Description: The URI of the existing Backend ECR Repository.
+
 Resources:
 
   # Create ECS Cluster
@@ -43,31 +51,19 @@ Resources:
     Properties:
       ClusterName: !Ref ClusterName
 
-  # Create ECR Repository for Frontend
-  FrontendRepository:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: frontend
-
-  # Create ECR Repository for Backend
-  BackendRepository:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: backend
-
   # Create ECS Task Definition for Frontend
   FrontendTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: frontend-task
-      Cpu: "256"
-      Memory: "512"
+      Cpu: "256"  # 0.25 vCPU
+      Memory: "512"  # 1 GB of memory
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
       ContainerDefinitions:
         - Name: frontend
-          Image: !Ref FrontendImageURI  # Reference ECR frontend image URI
+          Image: !Ref FrontendImageURI  # Reference existing ECR frontend image URI
           PortMappings:
             - ContainerPort: 80
               HostPort: 80
@@ -78,14 +74,14 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: backend-task
-      Cpu: "256"
-      Memory: "512"
+      Cpu: "256"  # 0.25 vCPU
+      Memory: "512"  # 1 GB of memory
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
       ContainerDefinitions:
         - Name: backend
-          Image: !Ref BackendImageURI  # Reference ECR backend image URI
+          Image: !Ref BackendImageURI  # Reference existing ECR backend image URI
           PortMappings:
             - ContainerPort: 3001
               HostPort: 3001
@@ -139,10 +135,9 @@ Outputs:
     Value: !Ref BackendService
 
   FrontendRepositoryURI:
-    Description: The URI of the Frontend ECR Repository.
-    Value: !GetAtt FrontendRepository.RepositoryUri
+    Description: The URI of the existing Frontend ECR Repository.
+    Value: !Ref FrontendRepositoryURI
 
   BackendRepositoryURI:
-    Description: The URI of the Backend ECR Repository.
-    Value: !GetAtt BackendRepository.RepositoryUri
-
+    Description: The URI of the existing Backend ECR Repository.
+    Value: !Ref BackendRepositoryURI
