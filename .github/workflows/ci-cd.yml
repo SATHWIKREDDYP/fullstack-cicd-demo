@@ -67,6 +67,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-push
     steps:
+      # Step 1: Checkout code to make sure we have access to the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Ensures the full history is fetched
+    steps:
       - name: Set up AWS credentials for CloudFormation deployment
         uses: aws-actions/configure-aws-credentials@v1
         with:
