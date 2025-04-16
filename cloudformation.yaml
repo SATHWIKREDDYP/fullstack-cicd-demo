@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template to create ECS Cluster, Task Definitions, and Services for Frontend and Backend
+
+Parameters:
+  ClusterName:
+    Type: String
+    Default: fullstack-app-cluster
+    Description: The name of the ECS Cluster.
+
+  FrontendImageURI:
+    Type: String
+    Description: The URI of the Docker image for the Frontend (from ECR).
+
+  BackendImageURI:
+    Type: String
+    Description: The URI of the Docker image for the Backend (from ECR).
+
+  VPCId:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC to deploy the ECS services into.
+
+  FrontendSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: The subnet ID for the frontend ECS service.
+
+  BackendSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: The subnet ID for the backend ECS service.
+
+  SecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: The security group ID for the ECS service.
+
+Resources:
+
+  # Create ECS Cluster
+  FullstackCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref ClusterName
+
+  # Create ECS Task Definition for Frontend
+  FrontendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: frontend-task
+      Cpu: "256"  # 0.25 vCPU
+      Memory: "512"  # 1 GB of memory
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ContainerDefinitions:
+        - Name: frontend
+          Image: !Ref FrontendImageURI
+          PortMappings:
+            - ContainerPort: 80
+              HostPort: 80
+          Essential: true
+
+  # Create ECS Task Definition for Backend
+  BackendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: backend-task
+      Cpu: "256"  # 0.25 vCPU
+      Memory: "512"  # 1 GB of memory
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ContainerDefinitions:
+        - Name: backend
+          Image: !Ref BackendImageURI
+          PortMappings:
+            - ContainerPort: 3001
+              HostPort: 3001
+          Essential: true
+
+  # Create ECS Service for Frontend
+  FrontendService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref FullstackCluster
+      ServiceName: frontend-service
+      TaskDefinition: !Ref FrontendTaskDefinition
+      DesiredCount: 0
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - !Ref FrontendSubnetId  # Reference frontend subnet
+          SecurityGroups:
+            - !Ref SecurityGroupId   # Reference security group
+          AssignPublicIp: ENABLED
+
+  # Create ECS Service for Backend
+  BackendService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref FullstackCluster
+      ServiceName: backend-service
+      TaskDefinition: !Ref BackendTaskDefinition
+      DesiredCount: 0
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - !Ref BackendSubnetId  # Reference backend subnet
+          SecurityGroups:
+            - !Ref SecurityGroupId  # Reference security group
+          AssignPublicIp: ENABLED
+
+Outputs:
+  ECSClusterName:
+    Description: The name of the ECS Cluster.
+    Value: !Ref FullstackCluster
+
+  FrontendServiceName:
+    Description: The name of the Frontend ECS Service.
+    Value: !Ref FrontendService
+
+
+
+
+  BackendServiceName:
+    Description: The name of the Backend ECS Service.
+    Value: !Ref BackendService
