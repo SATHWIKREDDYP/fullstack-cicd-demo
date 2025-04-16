@@ -17,22 +17,22 @@ Parameters:
 
   VPCId:
     Type: String
-    Default: vpc-0ffe1ed38985de182
+    Default: vpc-0ae142a936635dfc4
     Description: The VPC ID to deploy the ECS services into.
 
   FrontendSubnetId:
     Type: String
-    Default: subnet-04ccebd195db80010
+    Default: subnet-0545d557316da4be6
     Description: The subnet ID for the frontend ECS service.
 
   BackendSubnetId:
     Type: String
-    Default: subnet-04ccebd195db80010
+    Default: subnet-0545d557316da4be6
     Description: The subnet ID for the backend ECS service.
 
   SecurityGroupId:
     Type: String
-    Default: sg-0834e1746d798a82e
+    Default: sg-0e5cdf890df48ea67
     Description: The security group ID for the ECS service.
 
   FrontendRepositoryURI:
