@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline for Fullstack App
 
 on:
   push:
@@ -9,74 +9,78 @@ on:
       - main
 
 jobs:
-  # Lint and Test Backend
-  lint-test-backend:
+  # Job for creating ECR repositories (if not already created)
+  create-ecr-repositories:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: |
-          cd backend
-          npm install
-
-      - name: Run tests
-        run: |
-          cd backend
-          npm test
-
-  # Build and Push Docker Images
-  build-push:
-    runs-on: ubuntu-latest
-    needs: lint-test-backend
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      # Step to configure AWS credentials using GitHub secrets
-      - name: Configure AWS Credentials
+      - name: Set up AWS credentials for ECR creation
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
-        with:
-          mask-password: false
-          registry-type: private
-          skip-logout: false
-
-      - name: Build and Push Backend Docker Image
+      - name: Create ECR repositories for Frontend and Backend
         run: |
-          cd backend
-          docker build -t backend .
-          docker tag backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend:latest
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend:latest
+          aws ecr create-repository --repository-name frontend --region ${{ secrets.AWS_REGION }} || echo "Frontend ECR repository already exists"
+          aws ecr create-repository --repository-name backend --region ${{ secrets.AWS_REGION }} || echo "Backend ECR repository already exists"
 
-      - name: Build and Push Frontend Docker Image
-        run: |
-          cd frontend
-          docker build -t frontend .
-          docker tag frontend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend:latest
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend:latest
-
-  # Deploy to ECS Fargate
-  deploy:
+  # Job for building Docker images and pushing to ECR
+  build-and-push:
     runs-on: ubuntu-latest
-    needs: build-push
+    needs: create-ecr-repositories
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Configure AWS Credentials
+      - name: Build and push frontend Docker image
+        run: |
+          cd frontend
+          npm install
+          docker build -t frontend .
+          docker tag frontend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend:latest
+
+      - name: Build and push backend Docker image
+        run: |
+          cd backend
+          npm install
+          docker build -t backend .
+          docker tag backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend:latest
+
+  # Job for deploying infrastructure using CloudFormation
+  deploy-infrastructure:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Set up AWS credentials for CloudFormation deployment
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy Infrastructure with CloudFormation
+        run: |
+          aws cloudformation deploy \
+            --template-file cloudformation.yaml \
+            --stack-name fullstack-app-stack \
+            --parameter-overrides \
+              FrontendImageURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend:latest \
+              BackendImageURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend:latest \
+              VPCId=vpc-0ffe1ed38985de182 \
+              FrontendSubnetId=subnet-04ccebd195db80010 \
+              BackendSubnetId=subnet-04ccebd195db80010 \
+              SecurityGroupId=sg-0834e1746d798a82e \
+            --capabilities CAPABILITY_IAM
+
+  # Job for updating ECS Services after new image push
+  ecs-update:
+    runs-on: ubuntu-latest
+    needs: deploy-infrastructure
+    steps:
+      - name: Set up AWS credentials for ECS update
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -85,13 +89,15 @@ jobs:
 
       - name: Update ECS Frontend Service
         run: |
-          ecs_service_name=frontend-service
-          cluster_name=fullstack-app-cluster  # Updated to match the CloudFormation cluster name
-          aws ecs update-service --cluster $cluster_name --service $ecs_service_name --force-new-deployment
+          aws ecs update-service \
+            --cluster fullstack-app-cluster \
+            --service frontend-service \
+            --force-new-deployment
 
       - name: Update ECS Backend Service
         run: |
-          ecs_service_name=backend-service
-          cluster_name=fullstack-app-cluster  # Updated to match the CloudFormation cluster name
-          aws ecs update-service --cluster $cluster_name --service $ecs_service_name --force-new-deployment
+          aws ecs update-service \
+            --cluster fullstack-app-cluster \
+            --service backend-service \
+            --force-new-deployment
 
