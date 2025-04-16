@@ -100,6 +100,7 @@ jobs:
               BackendImageURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend:latest \
               FrontendRepositoryURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend \
               BackendRepositoryURI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend \
+              ECSExecutionRoleArn=arn:aws:iam::123456789012:role/sat \
               VPCId=vpc-0ae142a936635dfc4 \
               FrontendSubnetId=subnet-0545d557316da4be6 \
               BackendSubnetId=subnet-0545d557316da4be6 \
