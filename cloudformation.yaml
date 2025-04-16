@@ -118,9 +118,6 @@ Outputs:
     Description: The name of the Frontend ECS Service.
     Value: !Ref FrontendService
 
-
-
-
   BackendServiceName:
     Description: The name of the Backend ECS Service.
     Value: !Ref BackendService
